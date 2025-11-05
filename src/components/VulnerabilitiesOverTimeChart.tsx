@@ -53,10 +53,9 @@ export default function VulnerabilitiesOverTimeChart() {
       .slice(-12) // Last 12 months
       .map(([month, counts]) => ({
         month,
-        Open: counts.open,
+        Published: counts.open,
         Fixed: counts.fixed,
       }));
-
     return sortedData;
   }, [allVulnerabilities]);
 
@@ -78,6 +77,16 @@ export default function VulnerabilitiesOverTimeChart() {
         </Typography>
         <ResponsiveContainer width="100%" height={320}>
           <AreaChart data={timelineData}>
+            <defs>
+              <linearGradient id="colorPublished" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#EF4444" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#EF4444" stopOpacity={0.05} />
+              </linearGradient>
+              <linearGradient id="colorFixed" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#10B981" stopOpacity={0.05} />
+              </linearGradient>
+            </defs>
             <CartesianGrid
               strokeDasharray="3 3"
               stroke={alpha(theme.palette.divider, 0.1)}
@@ -94,11 +103,11 @@ export default function VulnerabilitiesOverTimeChart() {
             <Legend />
             <Area
               type="monotone"
-              dataKey="Open"
+              dataKey="Published"
               stackId="1"
-              stroke={theme.palette.error.main}
-              fill={theme.palette.error.main}
-              fillOpacity={0.6}
+              stroke="#EF4444"
+              strokeWidth={2}
+              fill="url(#colorPublished)"
               animationBegin={0}
               animationDuration={800}
             />
@@ -106,9 +115,9 @@ export default function VulnerabilitiesOverTimeChart() {
               type="monotone"
               dataKey="Fixed"
               stackId="1"
-              stroke={theme.palette.success.main}
-              fill={theme.palette.success.main}
-              fillOpacity={0.6}
+              stroke="#10B981"
+              strokeWidth={2}
+              fill="url(#colorFixed)"
               animationBegin={0}
               animationDuration={800}
             />

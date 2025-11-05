@@ -19,7 +19,6 @@ import {
   Close as CloseIcon,
 } from "@mui/icons-material";
 import { motion } from "framer-motion";
-import { toast } from "react-toastify";
 import { useVulnerabilities } from "../context/VulnerabilityContext";
 import Layout from "../components/Layout";
 import MetricsCards from "../components/MetricsCards";
@@ -48,11 +47,23 @@ export default function Dashboard({ isDarkMode, toggleTheme }: DashboardProps) {
   // Auto-load data from public folder if not loaded
   useEffect(() => {
     if (loadingState.status === "idle") {
-      loadData("/ui_demo.json").catch((error) => {
-        console.error("Failed to auto-load data:", error);
-        toast.info("Please upload your vulnerability data to get started");
-        setUploadDialogOpen(true);
-      });
+      // Check if file exists before trying to load
+      fetch("/ui_demo.json", { method: "HEAD" })
+        .then((response) => {
+          if (response.ok) {
+            loadData("/ui_demo.json").catch(() => {
+              // Silently fail and show upload dialog
+              setUploadDialogOpen(true);
+            });
+          } else {
+            // File doesn't exist, just show upload dialog
+            setUploadDialogOpen(true);
+          }
+        })
+        .catch(() => {
+          // Network error or file doesn't exist
+          setUploadDialogOpen(true);
+        });
     }
   }, [loadingState.status, loadData]);
 
@@ -103,28 +114,29 @@ export default function Dashboard({ isDarkMode, toggleTheme }: DashboardProps) {
     >
       <Box
         sx={{
-          position: "relative",
-          minHeight: "calc(100vh - 64px)",
           display: "flex",
           width: "100%",
+          minHeight: "calc(100vh - 64px)",
         }}
       >
         {/* Main Content */}
         <Box
           component="main"
           sx={{
-            flex: 1,
+            flexGrow: 1,
+            width:
+              filterDrawerOpen && !isMobile
+                ? `calc(100% - ${filterDrawerWidth}px)`
+                : "100%",
             minHeight: "calc(100vh - 64px)",
-            transition: "margin-right 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
-            mr: filterDrawerOpen && !isMobile ? `${filterDrawerWidth}px` : 0,
-            width: "100%",
+            transition: "width 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
             overflow: "auto",
           }}
         >
           <Box
             sx={{
               py: { xs: 2, sm: 3, md: 4 },
-              px: { xs: 2, sm: 3, md: 4, lg: 5 },
+              px: { xs: 2, sm: 2.5, md: 3 },
               width: "100%",
             }}
           >
@@ -230,68 +242,124 @@ export default function Dashboard({ isDarkMode, toggleTheme }: DashboardProps) {
         </Box>
 
         {/* Filter Drawer (Right Side) */}
-        <Drawer
-          variant={isMobile ? "temporary" : "persistent"}
-          anchor="right"
-          open={filterDrawerOpen}
-          onClose={() => setFilterDrawerOpen(false)}
+        <Box
           sx={{
-            width: filterDrawerOpen ? filterDrawerWidth : 0,
+            width: filterDrawerOpen && !isMobile ? filterDrawerWidth : 0,
             flexShrink: 0,
-            "& .MuiDrawer-paper": {
-              width: { xs: "90%", sm: 360, md: filterDrawerWidth },
-              boxSizing: "border-box",
-              top: { xs: 56, sm: 64 },
-              height: { xs: "calc(100% - 56px)", sm: "calc(100% - 64px)" },
-              border: "none",
-              borderLeft: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-              bgcolor: "background.default",
-              boxShadow: isMobile
-                ? theme.shadows[8]
-                : `0 0 20px ${alpha(theme.palette.common.black, 0.1)}`,
-              transition:
-                "transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease",
-            },
-          }}
-          ModalProps={{
-            keepMounted: true, // Better mobile performance
+            transition: "width 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
+            overflow: "hidden",
+            borderLeft:
+              filterDrawerOpen && !isMobile
+                ? `1px solid ${alpha(theme.palette.divider, 0.1)}`
+                : "none",
+            bgcolor: "background.default",
+            boxShadow:
+              filterDrawerOpen && !isMobile
+                ? `0 0 20px ${alpha(theme.palette.common.black, 0.1)}`
+                : "none",
           }}
         >
-          <Box sx={{ p: { xs: 2, md: 2.5 }, height: "100%", overflow: "auto" }}>
-            {/* Header */}
+          {filterDrawerOpen && (
             <Box
               sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                mb: 2,
+                width: filterDrawerWidth,
+                p: { xs: 2, md: 2.5 },
+                height: "100%",
+                overflow: "auto",
               }}
             >
-              <Typography variant="h6" fontWeight="bold">
-                Filters
-              </Typography>
-              <IconButton
-                size="small"
-                onClick={() => setFilterDrawerOpen(false)}
-                sx={{ minWidth: 44, minHeight: 44 }}
+              {/* Header */}
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  mb: 2,
+                }}
               >
-                <CloseIcon fontSize="small" />
-              </IconButton>
+                <Typography variant="h6" fontWeight="bold">
+                  Filters
+                </Typography>
+                <IconButton
+                  size="small"
+                  onClick={() => setFilterDrawerOpen(false)}
+                  sx={{ minWidth: 44, minHeight: 44 }}
+                >
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              </Box>
+
+              <Divider sx={{ mb: 2 }} />
+
+              {/* Analysis Buttons */}
+              <Box sx={{ mb: 3 }}>
+                <AnalysisButtons />
+              </Box>
+
+              <Divider sx={{ mb: 2 }} />
+
+              {/* Advanced Filters */}
+              <AdvancedFilters />
             </Box>
+          )}
+        </Box>
 
-            <Divider sx={{ mb: 2 }} />
+        {/* Mobile Drawer Overlay */}
+        {isMobile && (
+          <Drawer
+            variant="temporary"
+            anchor="right"
+            open={filterDrawerOpen}
+            onClose={() => setFilterDrawerOpen(false)}
+            sx={{
+              "& .MuiDrawer-paper": {
+                width: "90%",
+                maxWidth: 360,
+                boxSizing: "border-box",
+                bgcolor: "background.default",
+                boxShadow: theme.shadows[8],
+              },
+            }}
+            ModalProps={{
+              keepMounted: true,
+            }}
+          >
+            <Box sx={{ p: 2, height: "100%", overflow: "auto" }}>
+              {/* Header */}
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  mb: 2,
+                }}
+              >
+                <Typography variant="h6" fontWeight="bold">
+                  Filters
+                </Typography>
+                <IconButton
+                  size="small"
+                  onClick={() => setFilterDrawerOpen(false)}
+                  sx={{ minWidth: 44, minHeight: 44 }}
+                >
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              </Box>
 
-            {/* Analysis Buttons */}
-            <Box sx={{ mb: 3 }}>
-              <AnalysisButtons />
+              <Divider sx={{ mb: 2 }} />
+
+              {/* Analysis Buttons */}
+              <Box sx={{ mb: 3 }}>
+                <AnalysisButtons />
+              </Box>
+
+              <Divider sx={{ mb: 2 }} />
+
+              {/* Advanced Filters */}
+              <AdvancedFilters />
             </Box>
-
-            <Divider sx={{ mb: 2 }} />
-
-            {/* Advanced Filters */}
-            <AdvancedFilters />
-          </Box>
-        </Drawer>
+          </Drawer>
+        )}
       </Box>
 
       {/* Upload Dialog */}

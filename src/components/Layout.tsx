@@ -12,7 +12,6 @@ import {
   Typography,
   Button,
   Tooltip,
-  Switch,
   alpha,
   useTheme,
   useMediaQuery,
@@ -22,9 +21,11 @@ import {
   Brightness4 as DarkIcon,
   Brightness7 as LightIcon,
   ShieldOutlined as ShieldIcon,
+  DeleteSweep as ClearCacheIcon,
 } from "@mui/icons-material";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { clearDatabase } from "../utils/indexedDB";
 
 interface LayoutProps {
   children: ReactNode;
@@ -50,7 +51,7 @@ export default function Layout({
   ];
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh" }}>
+    <Box sx={{ display: "flex", minHeight: "100vh", width: "100%" }}>
       {/* App Bar */}
       <AppBar
         position="fixed"
@@ -175,38 +176,57 @@ export default function Layout({
             ))}
           </Box>
 
-          {/* Theme Toggle */}
+          {/* Theme Toggle Button */}
           <Tooltip
             title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
           >
-            <Box
+            <IconButton
+              onClick={toggleTheme}
               sx={{
-                display: "flex",
-                alignItems: "center",
-                mr: { xs: 1, sm: 2 },
+                color: "text.primary",
+                minWidth: 44,
+                minHeight: 44,
+                mr: { xs: 0.5, sm: 1 },
+                "&:hover": {
+                  backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                },
               }}
             >
-              {!isMobile && (
-                <LightIcon
-                  sx={{ fontSize: 20, color: "text.secondary", mr: 1 }}
-                />
-              )}
-              <Switch
-                checked={isDarkMode}
-                onChange={toggleTheme}
-                color="primary"
-                sx={{
-                  "& .MuiSwitch-switchBase.Mui-checked": {
-                    color: theme.palette.secondary.main,
-                  },
-                }}
-              />
-              {!isMobile && (
-                <DarkIcon
-                  sx={{ fontSize: 20, color: "text.secondary", ml: 1 }}
-                />
-              )}
-            </Box>
+              {isDarkMode ? <LightIcon /> : <DarkIcon />}
+            </IconButton>
+          </Tooltip>
+
+          {/* Clear Cache Button */}
+          <Tooltip title="Clear Cache">
+            <IconButton
+              onClick={() => {
+                if (
+                  window.confirm(
+                    "Are you sure you want to clear all cached data? This will reload the page immediately."
+                  )
+                ) {
+                  // Don't use async/await - execute synchronously then reload
+                  clearDatabase().catch(console.error);
+                  localStorage.clear();
+                  sessionStorage.clear();
+
+                  // Force immediate reload without waiting
+                  window.location.href = window.location.href;
+                }
+              }}
+              sx={{
+                color: "text.primary",
+                minWidth: 44,
+                minHeight: 44,
+                mr: { xs: 0.5, sm: 1 },
+                "&:hover": {
+                  backgroundColor: alpha(theme.palette.error.main, 0.1),
+                  color: "error.main",
+                },
+              }}
+            >
+              <ClearCacheIcon />
+            </IconButton>
           </Tooltip>
 
           {/* Upload Button */}

@@ -134,19 +134,46 @@ function calculateMetrics(
 
   metrics.cvssDistribution = cvssRanges;
 
-  // Timeline (monthly aggregation)
-  const monthlyCount = new Map<string, number>();
+  // Timeline (monthly aggregation with severity breakdown)
+  const monthlyCount = new Map<
+    string,
+    {
+      count: number;
+      critical: number;
+      high: number;
+      medium: number;
+      low: number;
+    }
+  >();
   for (const vuln of vulnerabilities) {
     if (vuln.publishedDate) {
       const monthKey = `${vuln.publishedDate.getFullYear()}-${String(
         vuln.publishedDate.getMonth() + 1
       ).padStart(2, "0")}`;
-      monthlyCount.set(monthKey, (monthlyCount.get(monthKey) || 0) + 1);
+
+      if (!monthlyCount.has(monthKey)) {
+        monthlyCount.set(monthKey, {
+          count: 0,
+          critical: 0,
+          high: 0,
+          medium: 0,
+          low: 0,
+        });
+      }
+
+      const data = monthlyCount.get(monthKey)!;
+      data.count++;
+
+      const severity = vuln.severity?.toLowerCase();
+      if (severity === "critical") data.critical++;
+      else if (severity === "high") data.high++;
+      else if (severity === "medium") data.medium++;
+      else if (severity === "low") data.low++;
     }
   }
 
   metrics.timeline = Array.from(monthlyCount.entries())
-    .map(([month, count]) => ({ month, count }))
+    .map(([month, data]) => ({ month, ...data }))
     .sort((a, b) => a.month.localeCompare(b.month))
     .slice(-24); // Last 24 months
 

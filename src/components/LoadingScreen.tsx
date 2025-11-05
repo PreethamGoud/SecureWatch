@@ -52,9 +52,13 @@ export default function LoadingScreen() {
         </Box>
       )}
 
-      {loadingState.error && (
-        <Typography variant="body2" color="error" sx={{ mt: 2 }}>
-          Error: {loadingState.error}
+      {loadingState.error && loadingState.status === "error" && (
+        <Typography
+          variant="body2"
+          color="error"
+          sx={{ mt: 2, maxWidth: 500, textAlign: "center", px: 2 }}
+        >
+          {loadingState.error}
         </Typography>
       )}
     </Box>

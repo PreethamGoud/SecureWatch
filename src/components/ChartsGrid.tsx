@@ -7,6 +7,7 @@
 
 import { Grid, Paper, Typography, useTheme, alpha, Stack } from "@mui/material";
 import { motion } from "framer-motion";
+import { useMemo } from "react";
 import {
   PieChart,
   Pie,
@@ -31,18 +32,22 @@ export default function ChartsGrid() {
 
   // Severity distribution data
   const severityData = Object.entries(metrics?.bySeverity || {}).map(
-    ([name, value]) => ({
-      name: name.charAt(0) + name.slice(1).toLowerCase(),
-      value,
-    })
+    ([name, value]) => {
+      const formattedName =
+        name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+      return {
+        name: formattedName,
+        value,
+      };
+    }
   );
 
   const severityColors: Record<string, string> = {
     Critical: "#DC2626", // Red
     High: "#EA580C", // Orange
-    Medium: "#D97706", // Amber/Gold
+    Medium: "#CA8A04", // Amber/Gold
     Low: "#2563EB", // Blue
-    Unknown: theme.palette.grey[500],
+    Unknown: "#9CA3AF",
   };
 
   // Custom label rendering for outside positioning
@@ -67,8 +72,72 @@ export default function ChartsGrid() {
     );
   };
 
-  // Timeline data (last 12 months)
-  const timelineData = (metrics?.timeline || []).slice(-12);
+  // Timeline data (last 12 months) with severity breakdown
+  const timelineData = useMemo(() => {
+    if (!metrics?.timeline || metrics.timeline.length === 0) return [];
+
+    return metrics.timeline.slice(-12).map((item: any) => ({
+      month: item.month,
+      count: item.count,
+      critical: item.critical || 0,
+      high: item.high || 0,
+      medium: item.medium || 0,
+      low: item.low || 0,
+    }));
+  }, [metrics?.timeline]);
+
+  // Custom tooltip for timeline
+  const CustomTimelineTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <Paper
+          sx={{
+            p: 1.5,
+            bgcolor: theme.palette.background.paper,
+            border: `1px solid ${theme.palette.divider}`,
+            borderRadius: 1,
+          }}
+        >
+          <Typography variant="body2" fontWeight="bold" gutterBottom>
+            {data.month}
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 0.5 }}>
+            Total: {data.count}
+          </Typography>
+          <Typography
+            variant="caption"
+            display="block"
+            sx={{ color: "#DC2626" }}
+          >
+            Critical: {data.critical || 0}
+          </Typography>
+          <Typography
+            variant="caption"
+            display="block"
+            sx={{ color: "#EA580C" }}
+          >
+            High: {data.high || 0}
+          </Typography>
+          <Typography
+            variant="caption"
+            display="block"
+            sx={{ color: "#CA8A04" }}
+          >
+            Medium: {data.medium || 0}
+          </Typography>
+          <Typography
+            variant="caption"
+            display="block"
+            sx={{ color: "#2563EB" }}
+          >
+            Low: {data.low || 0}
+          </Typography>
+        </Paper>
+      );
+    }
+    return null;
+  };
 
   return (
     <Grid container spacing={{ xs: 2, sm: 2.5, md: 3 }} sx={{ width: "100%" }}>
@@ -99,12 +168,18 @@ export default function ChartsGrid() {
                     cy="50%"
                     innerRadius={70}
                     outerRadius={95}
-                    labelLine={true}
+                    labelLine={{
+                      stroke:
+                        theme.palette.mode === "dark"
+                          ? alpha(theme.palette.divider, 0.5)
+                          : alpha(theme.palette.divider, 0.8),
+                    }}
                     label={renderCustomLabel}
-                    fill="#8884d8"
                     dataKey="value"
                     animationBegin={0}
                     animationDuration={800}
+                    stroke={theme.palette.background.paper}
+                    strokeWidth={2}
                   >
                     {severityData.map((entry, index) => (
                       <Cell
@@ -162,18 +237,12 @@ export default function ChartsGrid() {
                 />
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                 <YAxis />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: theme.palette.background.paper,
-                    border: `1px solid ${theme.palette.divider}`,
-                    borderRadius: 8,
-                  }}
-                />
+                <Tooltip content={<CustomTimelineTooltip />} />
                 <Legend />
                 <Line
                   type="monotone"
                   dataKey="count"
-                  stroke={theme.palette.secondary.main}
+                  stroke="#1976d2"
                   strokeWidth={2}
                   dot={{ r: 4 }}
                   activeDot={{ r: 6 }}

@@ -93,13 +93,15 @@ export default function AIvsManualChart() {
               fill={theme.palette.secondary.main}
               animationBegin={0}
               animationDuration={800}
+              radius={[0, 0, 0, 0]}
             />
             <Bar
               dataKey="Manual review"
               stackId="a"
-              fill={theme.palette.info.main}
+              fill={theme.palette.primary.main}
               animationBegin={0}
               animationDuration={800}
+              radius={[4, 4, 0, 0]}
             />
           </BarChart>
         </ResponsiveContainer>
