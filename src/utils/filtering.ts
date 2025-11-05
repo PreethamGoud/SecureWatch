@@ -35,9 +35,13 @@ export function applyFilters(
       }
     }
 
-    // Severity filter
+    // Severity filter (only apply if explicitly set and not all selected)
     if (filters.severities && filters.severities.length > 0) {
-      if (!filters.severities.includes(vuln.severity)) {
+      // Case-insensitive comparison
+      const normalizedSeverities = filters.severities.map((s) =>
+        s.toLowerCase()
+      );
+      if (!normalizedSeverities.includes(vuln.severity.toLowerCase())) {
         return false;
       }
     }
@@ -50,7 +54,7 @@ export function applyFilters(
     }
 
     // Analysis filters (key feature!)
-    if (filters.excludeInvalidNoRisk && vuln.kaiStatus === "invalid-norisk") {
+    if (filters.excludeInvalidNoRisk && vuln.kaiStatus === "invalid - norisk") {
       return false;
     }
 
@@ -69,10 +73,19 @@ export function applyFilters(
       }
     }
 
-    // Package names filter
+    // Package names filter (partial match for search, exact for multi-select)
     if (filters.packageNames && filters.packageNames.length > 0) {
-      if (!filters.packageNames.includes(vuln.packageName)) {
-        return false;
+      // If it's a search query (single item), do partial match
+      if (filters.packageNames.length === 1 && filters.packageNames[0]) {
+        const searchTerm = filters.packageNames[0].toLowerCase();
+        if (!vuln.packageName.toLowerCase().includes(searchTerm)) {
+          return false;
+        }
+      } else {
+        // Multiple selections: exact match
+        if (!filters.packageNames.includes(vuln.packageName)) {
+          return false;
+        }
       }
     }
 
