@@ -91,8 +91,6 @@ export async function bulkInsertVulnerabilities(
   const db = await initDB();
   const CHUNK_SIZE = 1000;
 
-  console.log(`Starting bulk insert of ${vulnerabilities.length} vulnerabilities`);
-
   for (let i = 0; i < vulnerabilities.length; i += CHUNK_SIZE) {
     const chunk = vulnerabilities.slice(i, i + CHUNK_SIZE);
     const tx = db.transaction("vulnerabilities", "readwrite");
@@ -107,10 +105,6 @@ export async function bulkInsertVulnerabilities(
       onProgress(progress);
     }
   }
-
-  // Verify count
-  const finalCount = await db.count("vulnerabilities");
-  console.log(`IndexedDB final count: ${finalCount} (expected: ${vulnerabilities.length})`);
 
   // Update metadata
   await db.put("metadata", {

@@ -4,7 +4,6 @@
 
 import { useState, useEffect } from "react";
 import {
-  Container,
   Box,
   Typography,
   Drawer,
@@ -13,8 +12,7 @@ import {
   Divider,
   alpha,
   useTheme,
-  Grid,
-  Skeleton,
+  useMediaQuery,
 } from "@mui/material";
 import {
   FilterList as FilterIcon,
@@ -30,8 +28,6 @@ import AnalysisButtons from "../components/AnalysisButtons";
 import AdvancedFilters from "../components/AdvancedFilters";
 import DataUploadDialog from "../components/DataUploadDialog";
 import LoadingScreen from "../components/LoadingScreen";
-import MetricCardSkeleton from "../components/MetricCardSkeleton";
-import ChartSkeleton from "../components/ChartSkeleton";
 import EmptyState from "../components/EmptyState";
 
 interface DashboardProps {
@@ -43,6 +39,7 @@ const filterDrawerWidth = 360;
 
 export default function Dashboard({ isDarkMode, toggleTheme }: DashboardProps) {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const { loadingState, loadData, filteredVulnerabilities } =
     useVulnerabilities();
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -59,62 +56,12 @@ export default function Dashboard({ isDarkMode, toggleTheme }: DashboardProps) {
     }
   }, [loadingState.status, loadData]);
 
-  // Show loading screen while data is being processed
-  if (loadingState.status === "loading") {
+  // Show loading screen while data is being loaded or processed
+  if (
+    loadingState.status === "loading" ||
+    loadingState.status === "processing"
+  ) {
     return <LoadingScreen />;
-  }
-
-  // Show skeletons during processing
-  if (loadingState.status === "processing") {
-    return (
-      <Layout
-        isDarkMode={isDarkMode}
-        toggleTheme={toggleTheme}
-        onUploadClick={() => setUploadDialogOpen(true)}
-      >
-        <Box sx={{ display: "flex", minHeight: "calc(100vh - 64px)" }}>
-          <Box
-            component="main"
-            sx={{
-              flexGrow: 1,
-              transition: "margin 0.3s ease",
-            }}
-          >
-            <Container maxWidth="xl" sx={{ py: 4 }}>
-              <Box sx={{ mb: 4 }}>
-                <Skeleton
-                  variant="text"
-                  width="30%"
-                  height={40}
-                  sx={{ mb: 1 }}
-                />
-                <Skeleton variant="text" width="50%" height={24} />
-              </Box>
-
-              <Grid container spacing={3} sx={{ mb: 4 }}>
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <Grid key={i} size={{ xs: 12, sm: 6, md: 3 }}>
-                    <MetricCardSkeleton />
-                  </Grid>
-                ))}
-              </Grid>
-
-              <Grid container spacing={3}>
-                <Grid size={{ xs: 12, md: 6, lg: 4 }}>
-                  <ChartSkeleton variant="pie" />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6, lg: 4 }}>
-                  <ChartSkeleton variant="bar" />
-                </Grid>
-                <Grid size={{ xs: 12, lg: 4 }}>
-                  <ChartSkeleton variant="line" />
-                </Grid>
-              </Grid>
-            </Container>
-          </Box>
-        </Box>
-      </Layout>
-    );
   }
 
   // Show upload prompt if no data
@@ -125,12 +72,18 @@ export default function Dashboard({ isDarkMode, toggleTheme }: DashboardProps) {
         toggleTheme={toggleTheme}
         onUploadClick={() => setUploadDialogOpen(true)}
       >
-        <Container maxWidth="xl" sx={{ py: 4 }}>
+        <Box
+          sx={{
+            py: { xs: 2, sm: 3, md: 4 },
+            px: { xs: 2, sm: 3, md: 4, lg: 5 },
+            width: "100%",
+          }}
+        >
           <EmptyState
             variant="no-data"
             onAction={() => setUploadDialogOpen(true)}
           />
-        </Container>
+        </Box>
         <DataUploadDialog
           open={uploadDialogOpen || loadingState.status === "error"}
           onClose={() => setUploadDialogOpen(false)}
@@ -148,17 +101,33 @@ export default function Dashboard({ isDarkMode, toggleTheme }: DashboardProps) {
       toggleTheme={toggleTheme}
       onUploadClick={() => setUploadDialogOpen(true)}
     >
-      <Box sx={{ display: "flex", minHeight: "calc(100vh - 64px)" }}>
+      <Box
+        sx={{
+          position: "relative",
+          minHeight: "calc(100vh - 64px)",
+          display: "flex",
+          width: "100%",
+        }}
+      >
         {/* Main Content */}
         <Box
           component="main"
           sx={{
-            flexGrow: 1,
-            transition: "margin 0.3s ease",
-            mr: filterDrawerOpen ? `${filterDrawerWidth}px` : 0,
+            flex: 1,
+            minHeight: "calc(100vh - 64px)",
+            transition: "margin-right 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
+            mr: filterDrawerOpen && !isMobile ? `${filterDrawerWidth}px` : 0,
+            width: "100%",
+            overflow: "auto",
           }}
         >
-          <Container maxWidth="xl" sx={{ py: 4 }}>
+          <Box
+            sx={{
+              py: { xs: 2, sm: 3, md: 4 },
+              px: { xs: 2, sm: 3, md: 4, lg: 5 },
+              width: "100%",
+            }}
+          >
             {/* Header with Filter Toggle */}
             <motion.div
               initial={{ opacity: 0, y: -20 }}
@@ -167,17 +136,32 @@ export default function Dashboard({ isDarkMode, toggleTheme }: DashboardProps) {
             >
               <Box
                 sx={{
-                  mb: 4,
+                  mb: { xs: 1.5, md: 2 },
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: 2,
                 }}
               >
-                <Box>
-                  <Typography variant="h4" gutterBottom fontWeight="bold">
+                <Box sx={{ minWidth: 0, flex: 1 }}>
+                  <Typography
+                    variant="h4"
+                    gutterBottom
+                    fontWeight="bold"
+                    sx={{
+                      fontSize: { xs: "1.75rem", sm: "2rem", md: "2.125rem" },
+                    }}
+                  >
                     Security Dashboard
                   </Typography>
-                  <Typography variant="body1" color="text.secondary">
+                  <Typography
+                    variant="body1"
+                    color="text.secondary"
+                    sx={{
+                      fontSize: { xs: "0.875rem", sm: "1rem" },
+                    }}
+                  >
                     Comprehensive vulnerability analysis and risk assessment
                   </Typography>
                 </Box>
@@ -185,11 +169,21 @@ export default function Dashboard({ isDarkMode, toggleTheme }: DashboardProps) {
                   <IconButton
                     onClick={() => setFilterDrawerOpen(!filterDrawerOpen)}
                     sx={{
+                      minWidth: 44,
+                      minHeight: 44,
                       bgcolor: filterDrawerOpen
-                        ? alpha(theme.palette.primary.main, 0.1)
+                        ? alpha(theme.palette.primary.main, 0.15)
                         : "transparent",
+                      color: filterDrawerOpen ? "primary.main" : "text.primary",
+                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                      transform: filterDrawerOpen
+                        ? "rotate(180deg)"
+                        : "rotate(0deg)",
                       "&:hover": {
                         bgcolor: alpha(theme.palette.primary.main, 0.2),
+                        transform: filterDrawerOpen
+                          ? "rotate(180deg) scale(1.1)"
+                          : "scale(1.1)",
                       },
                     }}
                   >
@@ -197,8 +191,7 @@ export default function Dashboard({ isDarkMode, toggleTheme }: DashboardProps) {
                   </IconButton>
                 </Tooltip>
               </Box>
-            </motion.div>
-
+            </motion.div>{" "}
             {/* Metrics Cards or Empty State */}
             {hasNoResults ? (
               <motion.div
@@ -218,7 +211,7 @@ export default function Dashboard({ isDarkMode, toggleTheme }: DashboardProps) {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.1 }}
                 >
-                  <Box sx={{ mb: 4 }}>
+                  <Box sx={{ mb: { xs: 2, sm: 2.5, md: 3 } }}>
                     <MetricsCards />
                   </Box>
                 </motion.div>
@@ -233,29 +226,38 @@ export default function Dashboard({ isDarkMode, toggleTheme }: DashboardProps) {
                 </motion.div>
               </>
             )}
-          </Container>
+          </Box>
         </Box>
 
         {/* Filter Drawer (Right Side) */}
         <Drawer
-          variant="persistent"
+          variant={isMobile ? "temporary" : "persistent"}
           anchor="right"
           open={filterDrawerOpen}
+          onClose={() => setFilterDrawerOpen(false)}
           sx={{
             width: filterDrawerOpen ? filterDrawerWidth : 0,
             flexShrink: 0,
             "& .MuiDrawer-paper": {
-              width: filterDrawerWidth,
+              width: { xs: "90%", sm: 360, md: filterDrawerWidth },
               boxSizing: "border-box",
-              top: 64,
-              height: "calc(100% - 64px)",
+              top: { xs: 56, sm: 64 },
+              height: { xs: "calc(100% - 56px)", sm: "calc(100% - 64px)" },
               border: "none",
               borderLeft: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
               bgcolor: "background.default",
+              boxShadow: isMobile
+                ? theme.shadows[8]
+                : `0 0 20px ${alpha(theme.palette.common.black, 0.1)}`,
+              transition:
+                "transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease",
             },
           }}
+          ModalProps={{
+            keepMounted: true, // Better mobile performance
+          }}
         >
-          <Box sx={{ p: 2, height: "100%", overflow: "auto" }}>
+          <Box sx={{ p: { xs: 2, md: 2.5 }, height: "100%", overflow: "auto" }}>
             {/* Header */}
             <Box
               sx={{
@@ -271,6 +273,7 @@ export default function Dashboard({ isDarkMode, toggleTheme }: DashboardProps) {
               <IconButton
                 size="small"
                 onClick={() => setFilterDrawerOpen(false)}
+                sx={{ minWidth: 44, minHeight: 44 }}
               >
                 <CloseIcon fontSize="small" />
               </IconButton>

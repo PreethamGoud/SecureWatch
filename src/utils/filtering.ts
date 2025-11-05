@@ -124,6 +124,19 @@ export function applyFilters(
       }
     }
 
+    // Risk factors filter
+    if (filters.riskFactors && filters.riskFactors.length > 0) {
+      const vulnRiskFactors = vuln.riskFactors
+        ? Object.keys(vuln.riskFactors)
+        : [];
+      const hasAnyRiskFactor = filters.riskFactors.some((rf) =>
+        vulnRiskFactors.includes(rf)
+      );
+      if (!hasAnyRiskFactor) {
+        return false;
+      }
+    }
+
     // Has exploit filter
     if (filters.hasExploit !== undefined) {
       const hasExploit = vuln.exploit && vuln.exploit.length > 0;

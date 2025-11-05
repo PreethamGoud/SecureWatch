@@ -1,8 +1,8 @@
 /**
- * Advanced Filters - Severity, CVSS, Package, Date Range
+ * Advanced Filters - Severity, CVSS, Package, Date Range, Risk Factors, Groups, Repositories, Sort
  */
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -18,21 +18,50 @@ import {
   AccordionDetails,
   alpha,
   useTheme,
+  Select,
+  MenuItem,
+  FormControl,
+  Button,
+  Autocomplete,
 } from "@mui/material";
 import {
   ExpandMore as ExpandMoreIcon,
   Close as CloseIcon,
+  Clear as ClearIcon,
 } from "@mui/icons-material";
 import { motion } from "framer-motion";
 import { useVulnerabilities } from "../context/VulnerabilityContext";
 
 export default function AdvancedFilters() {
   const theme = useTheme();
-  const { filters, setFilters } = useVulnerabilities();
+  const { filters, setFilters, allVulnerabilities, sortConfig, setSortConfig } =
+    useVulnerabilities();
   const [searchTerm, setSearchTerm] = useState("");
 
   const severities = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN"];
 
+  // Extract unique values from data
+  const uniqueRiskFactors = useMemo(() => {
+    const factors = new Set<string>();
+    allVulnerabilities.forEach((vuln) => {
+      Object.keys(vuln.riskFactors || {}).forEach((factor) =>
+        factors.add(factor)
+      );
+    });
+    return Array.from(factors).sort();
+  }, [allVulnerabilities]);
+
+  const uniqueGroups = useMemo(() => {
+    const groups = new Set(allVulnerabilities.map((v) => v.groupName));
+    return Array.from(groups).sort();
+  }, [allVulnerabilities]);
+
+  const uniqueRepositories = useMemo(() => {
+    const repos = new Set(allVulnerabilities.map((v) => v.repoName));
+    return Array.from(repos).sort();
+  }, [allVulnerabilities]);
+
+  // Handlers
   const handleSeverityToggle = (severity: string) => {
     const currentSeverities = filters.severities || severities;
     const newSeverities = currentSeverities.includes(severity)
@@ -51,15 +80,30 @@ export default function AdvancedFilters() {
     setFilters({ ...filters, packageNames: value ? [value] : [] });
   };
 
+  const handleSortChange = (field: string) => {
+    setSortConfig({
+      field: field as any,
+      direction:
+        sortConfig?.field === field && sortConfig?.direction === "asc"
+          ? "desc"
+          : "asc",
+    });
+  };
+
   const clearAllFilters = () => {
     setFilters({
       severities: ["CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN"],
       cvssRange: [0, 10],
       packageNames: [],
+      groups: [],
+      repos: [],
+      riskFactors: [],
+      dateRange: undefined,
       excludeInvalidNoRisk: false,
       excludeAiInvalidNoRisk: false,
     });
     setSearchTerm("");
+    setSortConfig({ field: "severity", direction: "desc" });
   };
 
   const currentSeverities = filters.severities || severities;
@@ -71,6 +115,10 @@ export default function AdvancedFilters() {
     currentCvssRange[0] > 0 ||
     currentCvssRange[1] < 10 ||
     currentPackageNames.length > 0 ||
+    (filters.groups && filters.groups.length > 0) ||
+    (filters.repos && filters.repos.length > 0) ||
+    (filters.riskFactors && filters.riskFactors.length > 0) ||
+    (filters.dateRange && (filters.dateRange.start || filters.dateRange.end)) ||
     filters.excludeInvalidNoRisk ||
     filters.excludeAiInvalidNoRisk;
 
@@ -259,6 +307,249 @@ export default function AdvancedFilters() {
             )}
           </AccordionDetails>
         </Accordion>
+
+        {/* Sort By */}
+        <Accordion defaultExpanded disableGutters elevation={0}>
+          <AccordionSummary
+            expandIcon={<ExpandMoreIcon />}
+            sx={{
+              px: 0,
+              minHeight: 48,
+              "& .MuiAccordionSummary-content": { my: 1 },
+            }}
+          >
+            <Typography variant="subtitle2" fontWeight="bold">
+              Sort By
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails sx={{ px: 0 }}>
+            <FormControl fullWidth size="small">
+              <Select
+                value={sortConfig?.field || "severity"}
+                onChange={(e) => handleSortChange(e.target.value)}
+                sx={{ borderRadius: 2 }}
+              >
+                <MenuItem value="severity">Severity</MenuItem>
+                <MenuItem value="cvss">CVSS Score</MenuItem>
+                <MenuItem value="published">Published Date</MenuItem>
+                <MenuItem value="repoName">Repository</MenuItem>
+              </Select>
+            </FormControl>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ mt: 1, display: "block" }}
+            >
+              Direction:{" "}
+              {sortConfig?.direction === "asc" ? "Ascending" : "Descending"}
+            </Typography>
+          </AccordionDetails>
+        </Accordion>
+
+        {/* Risk Factors */}
+        <Accordion disableGutters elevation={0}>
+          <AccordionSummary
+            expandIcon={<ExpandMoreIcon />}
+            sx={{
+              px: 0,
+              minHeight: 48,
+              "& .MuiAccordionSummary-content": { my: 1 },
+            }}
+          >
+            <Typography variant="subtitle2" fontWeight="bold">
+              Risk Factors
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails sx={{ px: 0 }}>
+            <Autocomplete
+              multiple
+              size="small"
+              options={uniqueRiskFactors}
+              value={filters.riskFactors || []}
+              onChange={(_event, newValue) => {
+                setFilters({ ...filters, riskFactors: newValue as string[] });
+              }}
+              renderInput={(params) => (
+                <TextField {...params} placeholder="Select risk factors" />
+              )}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => (
+                  <Chip
+                    label={option}
+                    {...getTagProps({ index })}
+                    size="small"
+                  />
+                ))
+              }
+            />
+          </AccordionDetails>
+        </Accordion>
+
+        {/* Groups */}
+        <Accordion disableGutters elevation={0}>
+          <AccordionSummary
+            expandIcon={<ExpandMoreIcon />}
+            sx={{
+              px: 0,
+              minHeight: 48,
+              "& .MuiAccordionSummary-content": { my: 1 },
+            }}
+          >
+            <Typography variant="subtitle2" fontWeight="bold">
+              Groups
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails sx={{ px: 0 }}>
+            <Autocomplete
+              multiple
+              size="small"
+              options={uniqueGroups}
+              value={filters.groups || []}
+              onChange={(_event, newValue) => {
+                setFilters({ ...filters, groups: newValue });
+              }}
+              renderInput={(params) => (
+                <TextField {...params} placeholder="Select groups" />
+              )}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => (
+                  <Chip
+                    label={option}
+                    {...getTagProps({ index })}
+                    size="small"
+                    color="primary"
+                    variant="outlined"
+                  />
+                ))
+              }
+            />
+          </AccordionDetails>
+        </Accordion>
+
+        {/* Repositories */}
+        <Accordion disableGutters elevation={0}>
+          <AccordionSummary
+            expandIcon={<ExpandMoreIcon />}
+            sx={{
+              px: 0,
+              minHeight: 48,
+              "& .MuiAccordionSummary-content": { my: 1 },
+            }}
+          >
+            <Typography variant="subtitle2" fontWeight="bold">
+              Repositories
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails sx={{ px: 0 }}>
+            <Autocomplete
+              multiple
+              size="small"
+              options={uniqueRepositories}
+              value={filters.repos || []}
+              onChange={(_event, newValue) => {
+                setFilters({ ...filters, repos: newValue });
+              }}
+              renderInput={(params) => (
+                <TextField {...params} placeholder="Select repositories" />
+              )}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => (
+                  <Chip
+                    label={option}
+                    {...getTagProps({ index })}
+                    size="small"
+                    color="secondary"
+                    variant="outlined"
+                  />
+                ))
+              }
+            />
+          </AccordionDetails>
+        </Accordion>
+
+        {/* Date Range */}
+        <Accordion disableGutters elevation={0}>
+          <AccordionSummary
+            expandIcon={<ExpandMoreIcon />}
+            sx={{
+              px: 0,
+              minHeight: 48,
+              "& .MuiAccordionSummary-content": { my: 1 },
+            }}
+          >
+            <Typography variant="subtitle2" fontWeight="bold">
+              Published Date Range
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails sx={{ px: 0 }}>
+            <Stack spacing={2}>
+              <TextField
+                label="From"
+                type="date"
+                size="small"
+                value={
+                  filters.dateRange?.start
+                    ? new Date(filters.dateRange.start)
+                        .toISOString()
+                        .split("T")[0]
+                    : ""
+                }
+                onChange={(e) => {
+                  setFilters({
+                    ...filters,
+                    dateRange: {
+                      ...filters.dateRange,
+                      start: e.target.value
+                        ? new Date(e.target.value)
+                        : undefined,
+                    },
+                  });
+                }}
+                InputLabelProps={{ shrink: true }}
+                fullWidth
+              />
+              <TextField
+                label="To"
+                type="date"
+                size="small"
+                value={
+                  filters.dateRange?.end
+                    ? new Date(filters.dateRange.end)
+                        .toISOString()
+                        .split("T")[0]
+                    : ""
+                }
+                onChange={(e) => {
+                  setFilters({
+                    ...filters,
+                    dateRange: {
+                      ...filters.dateRange,
+                      end: e.target.value
+                        ? new Date(e.target.value)
+                        : undefined,
+                    },
+                  });
+                }}
+                InputLabelProps={{ shrink: true }}
+                fullWidth
+              />
+            </Stack>
+          </AccordionDetails>
+        </Accordion>
+
+        {/* Clear All Button */}
+        <Box sx={{ mt: 3 }}>
+          <Button
+            fullWidth
+            variant="outlined"
+            color="error"
+            startIcon={<ClearIcon />}
+            onClick={clearAllFilters}
+            disabled={!hasActiveFilters}
+          >
+            Clear All Filters
+          </Button>
+        </Box>
       </Box>
     </motion.div>
   );

@@ -16,13 +16,17 @@ export default function LoadingScreen() {
   return (
     <Box
       sx={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        minHeight: "100vh",
         bgcolor: "background.default",
-        p: 3,
+        zIndex: 9999,
       }}
     >
       <CircularProgress size={60} thickness={4} sx={{ mb: 3 }} />

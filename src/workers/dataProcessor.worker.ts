@@ -44,7 +44,7 @@ function flattenVulnerabilities(
         for (let i = 0; i < vulns.length; i++) {
           const vuln = vulns[i];
           totalVulnCount++;
-          
+
           // Create unique composite ID with index to handle duplicates
           const id = `${groupName}|${repoName}|${imageName}|${vuln.cve}|${vuln.packageName}|${i}`;
 
@@ -76,10 +76,6 @@ function flattenVulnerabilities(
       } as ProgressMessage);
     }
   }
-
-  // Log final count for debugging
-  console.log(`Total vulnerabilities processed: ${totalVulnCount}`);
-  console.log(`Flattened array length: ${flattened.length}`);
 
   return flattened;
 }

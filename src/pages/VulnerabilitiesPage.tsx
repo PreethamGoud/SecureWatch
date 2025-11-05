@@ -4,7 +4,6 @@
 
 import { useState } from "react";
 import {
-  Container,
   Box,
   Typography,
   Paper,
@@ -15,6 +14,7 @@ import {
   Divider,
   alpha,
   useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import {
   FilterList as FilterIcon,
@@ -33,7 +33,6 @@ import ComparisonPanel from "../components/ComparisonPanel";
 import ExportDialog from "../components/ExportDialog";
 import DataUploadDialog from "../components/DataUploadDialog";
 import LoadingScreen from "../components/LoadingScreen";
-import TableSkeleton from "../components/TableSkeleton";
 import EmptyState from "../components/EmptyState";
 
 interface VulnerabilitiesPageProps {
@@ -48,39 +47,20 @@ export default function VulnerabilitiesPage({
   toggleTheme,
 }: VulnerabilitiesPageProps) {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const { loadingState, filteredVulnerabilities, comparisonIds } =
     useVulnerabilities();
-  const [filterDrawerOpen, setFilterDrawerOpen] = useState(true);
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(!isMobile);
   const [comparisonDrawerOpen, setComparisonDrawerOpen] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
   // Show loading screen if still loading/processing
-  if (loadingState.status === "loading") {
+  if (
+    loadingState.status === "loading" ||
+    loadingState.status === "processing"
+  ) {
     return <LoadingScreen />;
-  }
-
-  // Show skeleton during processing
-  if (loadingState.status === "processing") {
-    return (
-      <Layout
-        isDarkMode={isDarkMode}
-        toggleTheme={toggleTheme}
-        onUploadClick={() => setUploadDialogOpen(true)}
-      >
-        <Container maxWidth="xl" sx={{ py: 4 }}>
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h4" gutterBottom fontWeight="bold">
-              Vulnerabilities
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              Loading data...
-            </Typography>
-          </Box>
-          <TableSkeleton rows={15} columns={7} />
-        </Container>
-      </Layout>
-    );
   }
 
   // Show upload prompt if no data
@@ -91,12 +71,18 @@ export default function VulnerabilitiesPage({
         toggleTheme={toggleTheme}
         onUploadClick={() => setUploadDialogOpen(true)}
       >
-        <Container maxWidth="xl" sx={{ py: 4 }}>
+        <Box
+          sx={{
+            py: { xs: 2, sm: 3, md: 4 },
+            px: { xs: 1.5, sm: 2, md: 3, lg: 4 },
+            width: "100%",
+          }}
+        >
           <EmptyState
             variant="no-data"
             onAction={() => setUploadDialogOpen(true)}
           />
-        </Container>
+        </Box>
         <DataUploadDialog
           open={uploadDialogOpen}
           onClose={() => setUploadDialogOpen(false)}
@@ -127,112 +113,136 @@ export default function VulnerabilitiesPage({
       toggleTheme={toggleTheme}
       onUploadClick={() => setUploadDialogOpen(true)}
     >
-      <Box sx={{ display: "flex", minHeight: "calc(100vh - 64px)" }}>
+      <Box
+        sx={{
+          position: "relative",
+          minHeight: "calc(100vh - 64px)",
+          display: "flex",
+          width: "100%",
+        }}
+      >
         {/* Main Content */}
         <Box
           component="main"
           sx={{
-            flexGrow: 1,
-            transition: "margin 0.3s ease",
-            mr: filterDrawerOpen ? `${filterDrawerWidth}px` : 0,
-            position: "relative",
+            flex: 1,
+            minHeight: "calc(100vh - 64px)",
+            transition: "margin-right 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
+            mr: filterDrawerOpen && !isMobile ? `${filterDrawerWidth}px` : 0,
+            width: "100%",
+            overflow: "auto",
           }}
         >
-          <Container maxWidth="xl" sx={{ py: 4 }}>
+          <Box
+            sx={{
+              py: { xs: 2, sm: 3, md: 4 },
+              px: { xs: 1.5, sm: 2, md: 3, lg: 4 },
+              width: "100%",
+            }}
+          >
             {/* Header with Actions */}
             <Box
               sx={{
                 display: "flex",
+                flexWrap: "wrap",
                 justifyContent: "space-between",
-                alignItems: "center",
-                mb: 4,
+                alignItems: { xs: "flex-start", sm: "center" },
+                gap: { xs: 2, sm: 2, md: 3 },
+                mb: { xs: 3, md: 4 },
               }}
             >
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5 }}
-              >
-                <Typography variant="h4" gutterBottom fontWeight="bold">
+              <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 auto" } }}>
+                <Typography
+                  variant="h4"
+                  gutterBottom
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: { xs: "1.75rem", sm: "2rem", md: "2.125rem" },
+                  }}
+                >
                   Vulnerabilities
                 </Typography>
-                <Typography variant="body1" color="text.secondary">
-                  {filteredVulnerabilities.length.toLocaleString()}{" "}
-                  vulnerabilities found
+                <Typography
+                  variant="body1"
+                  color="text.secondary"
+                  sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
+                >
+                  {filteredVulnerabilities.length.toLocaleString()} items found
                 </Typography>
-              </motion.div>
+              </Box>
 
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5 }}
+              {/* Action Buttons */}
+              <Box
+                sx={{
+                  display: "flex",
+                  gap: { xs: 1, sm: 1.5 },
+                  flexWrap: "wrap",
+                }}
               >
-                <Box sx={{ display: "flex", gap: 1 }}>
-                  <Tooltip title="Toggle Filters">
-                    <IconButton
-                      onClick={() => setFilterDrawerOpen(!filterDrawerOpen)}
-                      sx={{
-                        bgcolor: filterDrawerOpen
-                          ? alpha(theme.palette.primary.main, 0.1)
-                          : "transparent",
-                        "&:hover": {
-                          bgcolor: alpha(theme.palette.primary.main, 0.2),
-                        },
-                      }}
-                    >
-                      <FilterIcon />
-                    </IconButton>
-                  </Tooltip>
-
-                  <Tooltip title="Compare Selected">
-                    <IconButton
-                      onClick={handleComparisonToggle}
-                      sx={{
-                        position: "relative",
-                        "&:hover": {
-                          bgcolor: alpha(theme.palette.secondary.main, 0.1),
-                        },
-                      }}
-                    >
-                      <CompareIcon />
-                      {comparisonIds.length > 0 && (
-                        <Box
-                          sx={{
-                            position: "absolute",
-                            top: 4,
-                            right: 4,
-                            bgcolor: "error.main",
-                            color: "white",
-                            borderRadius: "50%",
-                            width: 18,
-                            height: 18,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: 10,
-                            fontWeight: "bold",
-                          }}
-                        >
-                          {comparisonIds.length}
-                        </Box>
-                      )}
-                    </IconButton>
-                  </Tooltip>
-
-                  <Button
-                    variant="contained"
-                    startIcon={<ExportIcon />}
-                    onClick={handleExport}
+                <Tooltip title="Toggle Filters">
+                  <IconButton
+                    onClick={() => setFilterDrawerOpen(!filterDrawerOpen)}
                     sx={{
-                      borderRadius: 2,
-                      textTransform: "none",
-                      fontWeight: 600,
+                      bgcolor: filterDrawerOpen
+                        ? alpha(theme.palette.primary.main, 0.15)
+                        : "background.paper",
+                      color: filterDrawerOpen ? "primary.main" : "text.primary",
+                      border: 1,
+                      borderColor: filterDrawerOpen
+                        ? "primary.main"
+                        : "divider",
+                      minWidth: 44,
+                      minHeight: 44,
+                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                      transform: filterDrawerOpen
+                        ? "rotate(180deg)"
+                        : "rotate(0deg)",
+                      "&:hover": {
+                        bgcolor: alpha(theme.palette.primary.main, 0.2),
+                        borderColor: "primary.main",
+                        transform: filterDrawerOpen
+                          ? "rotate(180deg) scale(1.1)"
+                          : "scale(1.1)",
+                      },
                     }}
                   >
-                    Export
+                    <FilterIcon />
+                  </IconButton>
+                </Tooltip>
+
+                <Tooltip title={`Compare (${comparisonIds.length} selected)`}>
+                  <Button
+                    variant={
+                      comparisonIds.length > 0 ? "contained" : "outlined"
+                    }
+                    startIcon={<CompareIcon />}
+                    onClick={handleComparisonToggle}
+                    disabled={comparisonIds.length === 0}
+                    sx={{
+                      minHeight: 44,
+                      fontSize: { xs: "0.8125rem", sm: "0.875rem" },
+                      px: { xs: 2, sm: 2.5 },
+                    }}
+                  >
+                    {isMobile
+                      ? comparisonIds.length
+                      : `Compare (${comparisonIds.length})`}
                   </Button>
-                </Box>
-              </motion.div>
+                </Tooltip>
+
+                <Button
+                  variant="outlined"
+                  startIcon={<ExportIcon />}
+                  onClick={handleExport}
+                  sx={{
+                    minHeight: 44,
+                    fontSize: { xs: "0.8125rem", sm: "0.875rem" },
+                    px: { xs: 2, sm: 2.5 },
+                  }}
+                >
+                  {isMobile ? "" : "Export"}
+                </Button>
+              </Box>
             </Box>
 
             {/* Vulnerability Table or Empty State */}
@@ -253,70 +263,89 @@ export default function VulnerabilitiesPage({
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
+                style={{ width: "100%", overflow: "hidden" }}
               >
                 <Paper
                   elevation={0}
                   sx={{
                     border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
                     borderRadius: 2,
-                    overflow: "hidden",
+                    overflow: "auto",
+                    width: "100%",
                   }}
                 >
                   <VulnerabilityTable />
                 </Paper>
               </motion.div>
             )}
-          </Container>
+          </Box>
         </Box>
 
         {/* Filter Drawer (Right Side) */}
         <Drawer
-          variant="persistent"
+          variant={isMobile ? "temporary" : "persistent"}
           anchor="right"
           open={filterDrawerOpen}
+          onClose={() => setFilterDrawerOpen(false)}
           sx={{
             width: filterDrawerOpen ? filterDrawerWidth : 0,
             flexShrink: 0,
             "& .MuiDrawer-paper": {
-              width: filterDrawerWidth,
+              width: { xs: "90%", sm: 360, md: filterDrawerWidth },
               boxSizing: "border-box",
-              top: 64,
-              height: "calc(100% - 64px)",
+              top: { xs: 56, sm: 64 },
+              height: { xs: "calc(100% - 56px)", sm: "calc(100% - 64px)" },
               border: "none",
               borderLeft: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
               bgcolor: "background.default",
+              boxShadow: isMobile
+                ? theme.shadows[8]
+                : `0 0 20px ${alpha(theme.palette.common.black, 0.1)}`,
+              transition:
+                "transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease",
             },
           }}
+          ModalProps={{
+            keepMounted: true,
+          }}
         >
-          <Box sx={{ p: 2, height: "100%", overflow: "auto" }}>
+          <Box sx={{ p: { xs: 2, md: 2.5 }, height: "100%", overflow: "auto" }}>
             {/* Header */}
             <Box
               sx={{
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                mb: 2,
+                mb: { xs: 2, md: 2.5 },
               }}
             >
-              <Typography variant="h6" fontWeight="bold">
+              <Typography
+                variant="h6"
+                fontWeight="bold"
+                sx={{ fontSize: { xs: "1.125rem", md: "1.25rem" } }}
+              >
                 Filters
               </Typography>
               <IconButton
                 size="small"
                 onClick={() => setFilterDrawerOpen(false)}
+                sx={{
+                  minWidth: 44,
+                  minHeight: 44,
+                }}
               >
                 <CloseIcon fontSize="small" />
               </IconButton>
             </Box>
 
-            <Divider sx={{ mb: 2 }} />
+            <Divider sx={{ mb: { xs: 2, md: 2.5 } }} />
 
             {/* Analysis Buttons */}
-            <Box sx={{ mb: 3 }}>
+            <Box sx={{ mb: { xs: 2.5, md: 3 } }}>
               <AnalysisButtons />
             </Box>
 
-            <Divider sx={{ mb: 2 }} />
+            <Divider sx={{ mb: { xs: 2, md: 2.5 } }} />
 
             {/* Advanced Filters */}
             <AdvancedFilters />
@@ -342,26 +371,36 @@ export default function VulnerabilitiesPage({
               <Paper
                 elevation={8}
                 sx={{
-                  borderTopLeftRadius: 16,
-                  borderTopRightRadius: 16,
-                  maxHeight: "50vh",
+                  borderTopLeftRadius: { xs: 12, md: 16 },
+                  borderTopRightRadius: { xs: 12, md: 16 },
+                  maxHeight: { xs: "60vh", md: "50vh" },
                   overflow: "hidden",
                   borderTop: `3px solid ${theme.palette.primary.main}`,
                 }}
               >
                 <Box
                   sx={{
-                    p: 2,
+                    p: { xs: 1.5, md: 2 },
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
                     bgcolor: alpha(theme.palette.primary.main, 0.05),
                   }}
                 >
-                  <Typography variant="h6" fontWeight="bold">
+                  <Typography
+                    variant="h6"
+                    fontWeight="bold"
+                    sx={{ fontSize: { xs: "1rem", md: "1.25rem" } }}
+                  >
                     Comparison ({comparisonIds.length} selected)
                   </Typography>
-                  <IconButton onClick={() => setComparisonDrawerOpen(false)}>
+                  <IconButton
+                    onClick={() => setComparisonDrawerOpen(false)}
+                    sx={{
+                      minWidth: 44,
+                      minHeight: 44,
+                    }}
+                  >
                     <CloseIcon />
                   </IconButton>
                 </Box>

@@ -10,6 +10,7 @@ import LoadingScreen from "./components/LoadingScreen";
 // Lazy load pages for code splitting
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const VulnerabilitiesPage = lazy(() => import("./pages/VulnerabilitiesPage"));
+const VulnerabilityDetail = lazy(() => import("./pages/VulnerabilityDetail"));
 
 function App() {
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -50,6 +51,15 @@ function App() {
                 path="/vulnerabilities"
                 element={
                   <VulnerabilitiesPage
+                    isDarkMode={isDarkMode}
+                    toggleTheme={toggleTheme}
+                  />
+                }
+              />
+              <Route
+                path="/vulnerability/:id"
+                element={
+                  <VulnerabilityDetail
                     isDarkMode={isDarkMode}
                     toggleTheme={toggleTheme}
                   />
