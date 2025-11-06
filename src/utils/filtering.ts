@@ -73,16 +73,25 @@ export function applyFilters(
       }
     }
 
-    // Package names filter (partial match for search, exact for multi-select)
+    // Package names filter (global search across CVE, package, repo, group)
     if (filters.packageNames && filters.packageNames.length > 0) {
-      // If it's a search query (single item), do partial match
+      // If it's a search query (single item), do global search
       if (filters.packageNames.length === 1 && filters.packageNames[0]) {
         const searchTerm = filters.packageNames[0].toLowerCase();
-        if (!vuln.packageName.toLowerCase().includes(searchTerm)) {
+        const searchableText = [
+          vuln.cve,
+          vuln.packageName,
+          vuln.repoName,
+          vuln.groupName,
+        ]
+          .join(" ")
+          .toLowerCase();
+
+        if (!searchableText.includes(searchTerm)) {
           return false;
         }
       } else {
-        // Multiple selections: exact match
+        // Multiple selections: exact match (fallback for future multi-select)
         if (!filters.packageNames.includes(vuln.packageName)) {
           return false;
         }

@@ -20,11 +20,11 @@ import { useMemo } from "react";
 
 export default function AIvsManualChart() {
   const theme = useTheme();
-  const { allVulnerabilities } = useVulnerabilities();
+  const { filteredVulnerabilities } = useVulnerabilities();
 
-  // Process vulnerabilities by severity, categorizing as AI vs Manual
+  // Process filtered vulnerabilities by severity, categorizing as AI vs Manual
   const data = useMemo(() => {
-    if (!allVulnerabilities || allVulnerabilities.length === 0) {
+    if (!filteredVulnerabilities || filteredVulnerabilities.length === 0) {
       return [
         { name: "Critical", "AI analysis": 0, "Manual review": 0 },
         { name: "High", "AI analysis": 0, "Manual review": 0 },
@@ -37,7 +37,7 @@ export default function AIvsManualChart() {
     const severities = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN"];
 
     return severities.map((severity) => {
-      const severityVulns = allVulnerabilities.filter(
+      const severityVulns = filteredVulnerabilities.filter(
         (v) => v.severity?.toUpperCase() === severity
       );
 
@@ -53,7 +53,7 @@ export default function AIvsManualChart() {
         "Manual review": manualCount,
       };
     });
-  }, [allVulnerabilities]);
+  }, [filteredVulnerabilities]);
 
   return (
     <motion.div

@@ -1,6 +1,8 @@
 import { lazy, Suspense, useState, useMemo } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { ThemeProvider, CssBaseline } from "@mui/material";
+import { LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { VulnerabilityProvider } from "./context/VulnerabilityContext";
@@ -34,41 +36,43 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <VulnerabilityProvider>
-        <Router>
-          <Suspense fallback={<LoadingScreen />}>
-            <Routes>
-              <Route
-                path="/"
-                element={
-                  <Dashboard
-                    isDarkMode={isDarkMode}
-                    toggleTheme={toggleTheme}
-                  />
-                }
-              />
-              <Route
-                path="/vulnerabilities"
-                element={
-                  <VulnerabilitiesPage
-                    isDarkMode={isDarkMode}
-                    toggleTheme={toggleTheme}
-                  />
-                }
-              />
-              <Route
-                path="/vulnerability/:id"
-                element={
-                  <VulnerabilityDetail
-                    isDarkMode={isDarkMode}
-                    toggleTheme={toggleTheme}
-                  />
-                }
-              />
-            </Routes>
-          </Suspense>
-        </Router>
-      </VulnerabilityProvider>
+      <LocalizationProvider dateAdapter={AdapterDateFns}>
+        <VulnerabilityProvider>
+          <Router>
+            <Suspense fallback={<LoadingScreen />}>
+              <Routes>
+                <Route
+                  path="/"
+                  element={
+                    <Dashboard
+                      isDarkMode={isDarkMode}
+                      toggleTheme={toggleTheme}
+                    />
+                  }
+                />
+                <Route
+                  path="/vulnerabilities"
+                  element={
+                    <VulnerabilitiesPage
+                      isDarkMode={isDarkMode}
+                      toggleTheme={toggleTheme}
+                    />
+                  }
+                />
+                <Route
+                  path="/vulnerability/:id"
+                  element={
+                    <VulnerabilityDetail
+                      isDarkMode={isDarkMode}
+                      toggleTheme={toggleTheme}
+                    />
+                  }
+                />
+              </Routes>
+            </Suspense>
+          </Router>
+        </VulnerabilityProvider>
+      </LocalizationProvider>
       <ToastContainer
         position="bottom-right"
         autoClose={3000}

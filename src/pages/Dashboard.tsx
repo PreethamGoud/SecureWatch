@@ -24,7 +24,7 @@ import Layout from "../components/Layout";
 import MetricsCards from "../components/MetricsCards";
 import ChartsGrid from "../components/ChartsGrid";
 import AnalysisButtons from "../components/AnalysisButtons";
-import AdvancedFilters from "../components/AdvancedFilters";
+import UnifiedFilters from "../components/UnifiedFilters";
 import DataUploadDialog from "../components/DataUploadDialog";
 import LoadingScreen from "../components/LoadingScreen";
 import EmptyState from "../components/EmptyState";
@@ -165,16 +165,7 @@ export default function Dashboard({ isDarkMode, toggleTheme }: DashboardProps) {
                       fontSize: { xs: "1.75rem", sm: "2rem", md: "2.125rem" },
                     }}
                   >
-                    Security Dashboard
-                  </Typography>
-                  <Typography
-                    variant="body1"
-                    color="text.secondary"
-                    sx={{
-                      fontSize: { xs: "0.875rem", sm: "1rem" },
-                    }}
-                  >
-                    Comprehensive vulnerability analysis and risk assessment
+                    Dashboard
                   </Typography>
                 </Box>
                 <Tooltip title="Toggle Filters">
@@ -298,8 +289,8 @@ export default function Dashboard({ isDarkMode, toggleTheme }: DashboardProps) {
 
               <Divider sx={{ mb: 2 }} />
 
-              {/* Advanced Filters */}
-              <AdvancedFilters />
+              {/* Unified Filters - with date range only */}
+              <UnifiedFilters showDateRange />
             </Box>
           )}
         </Box>
@@ -355,8 +346,8 @@ export default function Dashboard({ isDarkMode, toggleTheme }: DashboardProps) {
 
               <Divider sx={{ mb: 2 }} />
 
-              {/* Advanced Filters */}
-              <AdvancedFilters />
+              {/* Unified Filters - with date range only */}
+              <UnifiedFilters showDateRange />
             </Box>
           </Drawer>
         )}

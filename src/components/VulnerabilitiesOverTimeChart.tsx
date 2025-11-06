@@ -20,13 +20,13 @@ import { useMemo } from "react";
 
 export default function VulnerabilitiesOverTimeChart() {
   const theme = useTheme();
-  const { allVulnerabilities } = useVulnerabilities();
+  const { filteredVulnerabilities } = useVulnerabilities();
 
-  // Process vulnerabilities to create timeline data with open/fixed counts
+  // Process filtered vulnerabilities to create timeline data with open/fixed counts
   const timelineData = useMemo(() => {
     const monthlyData = new Map<string, { open: number; fixed: number }>();
 
-    allVulnerabilities.forEach((vuln) => {
+    filteredVulnerabilities.forEach((vuln) => {
       if (vuln.publishedDate) {
         const monthKey = `${vuln.publishedDate.getFullYear()}-${String(
           vuln.publishedDate.getMonth() + 1
@@ -57,7 +57,7 @@ export default function VulnerabilitiesOverTimeChart() {
         Fixed: counts.fixed,
       }));
     return sortedData;
-  }, [allVulnerabilities]);
+  }, [filteredVulnerabilities]);
 
   return (
     <motion.div

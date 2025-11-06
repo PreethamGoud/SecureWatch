@@ -3,6 +3,7 @@
  * Taller chart to span the height of left column (Severity + AI vs Manual)
  */
 
+import { useMemo } from "react";
 import { Paper, Typography, useTheme, alpha } from "@mui/material";
 import { motion } from "framer-motion";
 import {
@@ -18,16 +19,26 @@ import { useVulnerabilities } from "../context/VulnerabilityContext";
 
 export default function TopRiskFactorsChart() {
   const theme = useTheme();
-  const { metrics } = useVulnerabilities();
+  const { filteredVulnerabilities } = useVulnerabilities();
 
-  // Risk factors data (top 10)
-  const riskFactorsData = Object.entries(metrics?.byRiskFactor || {})
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10)
-    .map(([name, value]) => ({
-      name: name.replace(/_/g, " "),
-      count: value,
-    }));
+  // Calculate risk factors from filtered vulnerabilities (top 10)
+  const riskFactorsData = useMemo(() => {
+    const byRiskFactor: Record<string, number> = {};
+
+    filteredVulnerabilities.forEach((vuln) => {
+      Object.keys(vuln.riskFactors || {}).forEach((factor) => {
+        byRiskFactor[factor] = (byRiskFactor[factor] || 0) + 1;
+      });
+    });
+
+    return Object.entries(byRiskFactor)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([name, value]) => ({
+        name: name.replace(/_/g, " "),
+        count: value,
+      }));
+  }, [filteredVulnerabilities]);
 
   return (
     <motion.div

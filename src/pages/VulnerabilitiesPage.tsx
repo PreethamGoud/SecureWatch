@@ -12,15 +12,20 @@ import {
   Tooltip,
   Button,
   Divider,
+  Select,
+  MenuItem,
+  TextField,
   alpha,
   useTheme,
   useMediaQuery,
 } from "@mui/material";
 import {
-  FilterList as FilterIcon,
+  Tune as FilterIcon,
   FileDownload as ExportIcon,
   CompareArrows as CompareIcon,
   Close as CloseIcon,
+  ArrowUpward as ArrowUpIcon,
+  ArrowDownward as ArrowDownIcon,
 } from "@mui/icons-material";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
@@ -28,12 +33,14 @@ import { useVulnerabilities } from "../context/VulnerabilityContext";
 import Layout from "../components/Layout";
 import VulnerabilityTable from "../components/VulnerabilityTable";
 import AnalysisButtons from "../components/AnalysisButtons";
-import AdvancedFilters from "../components/AdvancedFilters";
+import UnifiedFilters from "../components/UnifiedFilters";
 import ComparisonPanel from "../components/ComparisonPanel";
+import VulnerabilityDetailPanel from "../components/VulnerabilityDetailPanel";
 import ExportDialog from "../components/ExportDialog";
 import DataUploadDialog from "../components/DataUploadDialog";
 import LoadingScreen from "../components/LoadingScreen";
 import EmptyState from "../components/EmptyState";
+import type { FlattenedVulnerability } from "../types/vulnerability";
 
 interface VulnerabilitiesPageProps {
   isDarkMode: boolean;
@@ -48,10 +55,20 @@ export default function VulnerabilitiesPage({
 }: VulnerabilitiesPageProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const { loadingState, filteredVulnerabilities, comparisonIds } =
-    useVulnerabilities();
+  const {
+    loadingState,
+    filteredVulnerabilities,
+    comparisonIds,
+    sortConfig,
+    setSortConfig,
+    filters,
+    setFilters,
+  } = useVulnerabilities();
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(!isMobile);
   const [comparisonDrawerOpen, setComparisonDrawerOpen] = useState(false);
+  const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
+  const [selectedVulnerability, setSelectedVulnerability] =
+    useState<FlattenedVulnerability | null>(null);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
@@ -104,6 +121,16 @@ export default function VulnerabilitiesPage({
       return;
     }
     setComparisonDrawerOpen(!comparisonDrawerOpen);
+  };
+
+  const handleViewDetails = (vulnerability: FlattenedVulnerability) => {
+    setSelectedVulnerability(vulnerability);
+    setDetailDrawerOpen(true);
+  };
+
+  const handleCloseDetail = () => {
+    setDetailDrawerOpen(false);
+    setTimeout(() => setSelectedVulnerability(null), 300); // Wait for animation
   };
 
   // Data is ready, show the full page
@@ -178,8 +205,36 @@ export default function VulnerabilitiesPage({
                   display: "flex",
                   gap: { xs: 1, sm: 1.5 },
                   flexWrap: "wrap",
+                  alignItems: "center",
                 }}
               >
+                {/* Search Field */}
+                <TextField
+                  size="small"
+                  placeholder="Search CVE, Package, Repository, or Group.."
+                  value={filters.packageNames?.[0] || ""}
+                  onChange={(e) => {
+                    setFilters({
+                      ...filters,
+                      packageNames: e.target.value ? [e.target.value] : [],
+                    });
+                  }}
+                  sx={{
+                    minWidth: { xs: 250, sm: 350 },
+                    minHeight: 44,
+                    bgcolor: "background.paper",
+                    border: 1,
+                    borderColor: "divider",
+                    borderRadius: 1,
+                    "& .MuiOutlinedInput-root": {
+                      fontSize: "0.875rem",
+                      "& fieldset": {
+                        border: "none",
+                      },
+                    },
+                  }}
+                />
+
                 <Tooltip title="Toggle Filters">
                   <IconButton
                     onClick={() => setFilterDrawerOpen(!filterDrawerOpen)}
@@ -208,6 +263,72 @@ export default function VulnerabilitiesPage({
                     }}
                   >
                     <FilterIcon />
+                  </IconButton>
+                </Tooltip>
+
+                {/* Sort By Dropdown */}
+                <Select
+                  value={sortConfig?.field || "severity"}
+                  onChange={(e) => {
+                    if (setSortConfig) {
+                      setSortConfig({
+                        field: e.target.value as any,
+                        direction: sortConfig?.direction || "desc",
+                      });
+                    }
+                  }}
+                  size="small"
+                  sx={{
+                    minWidth: 140,
+                    minHeight: 44,
+                    fontSize: "0.875rem",
+                    bgcolor: "background.paper",
+                    border: 1,
+                    borderColor: "divider",
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      border: "none",
+                    },
+                  }}
+                >
+                  <MenuItem value="severity">Sort: Severity</MenuItem>
+                  <MenuItem value="cvss">Sort: CVSS</MenuItem>
+                  <MenuItem value="published">Sort: Published</MenuItem>
+                  <MenuItem value="repoName">Sort: Repository</MenuItem>
+                </Select>
+
+                {/* Sort Direction Toggle */}
+                <Tooltip
+                  title={
+                    sortConfig?.direction === "asc" ? "Ascending" : "Descending"
+                  }
+                >
+                  <IconButton
+                    onClick={() => {
+                      if (setSortConfig) {
+                        setSortConfig({
+                          field: sortConfig?.field || "severity",
+                          direction:
+                            sortConfig?.direction === "asc" ? "desc" : "asc",
+                        });
+                      }
+                    }}
+                    sx={{
+                      bgcolor: "background.paper",
+                      border: 1,
+                      borderColor: "divider",
+                      minWidth: 44,
+                      minHeight: 44,
+                      "&:hover": {
+                        bgcolor: alpha(theme.palette.primary.main, 0.1),
+                        borderColor: "primary.main",
+                      },
+                    }}
+                  >
+                    {sortConfig?.direction === "asc" ? (
+                      <ArrowUpIcon />
+                    ) : (
+                      <ArrowDownIcon />
+                    )}
                   </IconButton>
                 </Tooltip>
 
@@ -275,7 +396,7 @@ export default function VulnerabilitiesPage({
                     width: "100%",
                   }}
                 >
-                  <VulnerabilityTable />
+                  <VulnerabilityTable onViewDetails={handleViewDetails} />
                 </Paper>
               </motion.div>
             )}
@@ -346,8 +467,8 @@ export default function VulnerabilitiesPage({
 
               <Divider sx={{ mb: { xs: 2, md: 2.5 } }} />
 
-              {/* Advanced Filters */}
-              <AdvancedFilters />
+              {/* Unified Filters - with search and date range (sort in header) */}
+              <UnifiedFilters showSearch showDateRange />
             </Box>
           )}
         </Box>
@@ -403,11 +524,45 @@ export default function VulnerabilitiesPage({
 
               <Divider sx={{ mb: 2 }} />
 
-              {/* Advanced Filters */}
-              <AdvancedFilters />
+              {/* Unified Filters - with search and date range (sort in header) */}
+              <UnifiedFilters showSearch showDateRange />
             </Box>
           </Drawer>
         )}
+
+        {/* Detail Drawer (Right Side) */}
+        <AnimatePresence>
+          {detailDrawerOpen && selectedVulnerability && (
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              style={{
+                position: "fixed",
+                top: 64,
+                bottom: 0,
+                right: 0,
+                width: isMobile ? "100%" : "600px",
+                zIndex: 1300,
+              }}
+            >
+              <Paper
+                elevation={8}
+                sx={{
+                  height: "100%",
+                  overflow: "hidden",
+                  borderLeft: `3px solid ${theme.palette.primary.main}`,
+                }}
+              >
+                <VulnerabilityDetailPanel
+                  vulnerability={selectedVulnerability}
+                  onClose={handleCloseDetail}
+                />
+              </Paper>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Comparison Drawer (Bottom) */}
         <AnimatePresence>
@@ -419,6 +574,7 @@ export default function VulnerabilitiesPage({
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               style={{
                 position: "fixed",
+                top: 64,
                 bottom: 0,
                 left: 0,
                 right: 0,
@@ -428,9 +584,7 @@ export default function VulnerabilitiesPage({
               <Paper
                 elevation={8}
                 sx={{
-                  borderTopLeftRadius: { xs: 12, md: 16 },
-                  borderTopRightRadius: { xs: 12, md: 16 },
-                  maxHeight: { xs: "60vh", md: "50vh" },
+                  height: "100%",
                   overflow: "hidden",
                   borderTop: `3px solid ${theme.palette.primary.main}`,
                 }}
@@ -464,7 +618,7 @@ export default function VulnerabilitiesPage({
                 <Box
                   sx={{
                     p: 2,
-                    maxHeight: "calc(50vh - 60px)",
+                    height: "calc(100% - 70px)",
                     overflow: "auto",
                   }}
                 >

@@ -122,7 +122,17 @@ export async function getAllVulnerabilities(): Promise<
   FlattenedVulnerability[]
 > {
   const db = await initDB();
-  return db.getAll("vulnerabilities");
+  const vulnerabilities = await db.getAll("vulnerabilities");
+
+  // Rehydrate Date objects (IndexedDB serializes them)
+  return vulnerabilities.map((vuln) => ({
+    ...vuln,
+    publishedDate: vuln.publishedDate
+      ? new Date(vuln.publishedDate)
+      : undefined,
+    fixedDate: vuln.fixedDate ? new Date(vuln.fixedDate) : undefined,
+    layerDate: vuln.layerDate ? new Date(vuln.layerDate) : undefined,
+  }));
 }
 
 /**

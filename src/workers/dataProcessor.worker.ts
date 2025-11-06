@@ -145,6 +145,7 @@ function calculateMetrics(
       low: number;
     }
   >();
+
   for (const vuln of vulnerabilities) {
     if (vuln.publishedDate) {
       const monthKey = `${vuln.publishedDate.getFullYear()}-${String(
@@ -164,11 +165,22 @@ function calculateMetrics(
       const data = monthlyCount.get(monthKey)!;
       data.count++;
 
-      const severity = vuln.severity?.toLowerCase();
-      if (severity === "critical") data.critical++;
-      else if (severity === "high") data.high++;
-      else if (severity === "medium") data.medium++;
-      else if (severity === "low") data.low++;
+      // Normalize severity to lowercase and match
+      const rawSeverity = vuln.severity;
+      const severity = rawSeverity
+        ? String(rawSeverity).toLowerCase().trim()
+        : "";
+
+      if (severity === "critical") {
+        data.critical++;
+      } else if (severity === "high") {
+        data.high++;
+      } else if (severity === "medium") {
+        data.medium++;
+      } else if (severity === "low" || severity === "negligible") {
+        // Group negligible with low
+        data.low++;
+      }
     }
   }
 

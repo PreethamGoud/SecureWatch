@@ -28,10 +28,22 @@ import VulnerabilitiesOverTimeChart from "./VulnerabilitiesOverTimeChart";
 
 export default function ChartsGrid() {
   const theme = useTheme();
-  const { metrics } = useVulnerabilities();
+  const { filteredVulnerabilities } = useVulnerabilities();
 
-  // Severity distribution data
-  const severityData = Object.entries(metrics?.bySeverity || {}).map(
+  // Calculate metrics from filtered vulnerabilities
+  const filteredMetrics = useMemo(() => {
+    const bySeverity: Record<string, number> = {};
+
+    filteredVulnerabilities.forEach((vuln) => {
+      const severity = vuln.severity || "unknown";
+      bySeverity[severity] = (bySeverity[severity] || 0) + 1;
+    });
+
+    return { bySeverity };
+  }, [filteredVulnerabilities]);
+
+  // Severity distribution data from filtered metrics
+  const severityData = Object.entries(filteredMetrics.bySeverity || {}).map(
     ([name, value]) => {
       const formattedName =
         name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
@@ -72,19 +84,58 @@ export default function ChartsGrid() {
     );
   };
 
-  // Timeline data (last 12 months) with severity breakdown
+  // Timeline data (last 12 months) with severity breakdown from filtered vulnerabilities
   const timelineData = useMemo(() => {
-    if (!metrics?.timeline || metrics.timeline.length === 0) return [];
+    const monthlyCount = new Map<
+      string,
+      {
+        count: number;
+        critical: number;
+        high: number;
+        medium: number;
+        low: number;
+      }
+    >();
 
-    return metrics.timeline.slice(-12).map((item: any) => ({
-      month: item.month,
-      count: item.count,
-      critical: item.critical || 0,
-      high: item.high || 0,
-      medium: item.medium || 0,
-      low: item.low || 0,
-    }));
-  }, [metrics?.timeline]);
+    filteredVulnerabilities.forEach((vuln) => {
+      if (vuln.publishedDate) {
+        const monthKey = `${vuln.publishedDate.getFullYear()}-${String(
+          vuln.publishedDate.getMonth() + 1
+        ).padStart(2, "0")}`;
+
+        if (!monthlyCount.has(monthKey)) {
+          monthlyCount.set(monthKey, {
+            count: 0,
+            critical: 0,
+            high: 0,
+            medium: 0,
+            low: 0,
+          });
+        }
+
+        const data = monthlyCount.get(monthKey)!;
+        data.count++;
+
+        const severity = vuln.severity
+          ? String(vuln.severity).toLowerCase().trim()
+          : "";
+        if (severity === "critical") {
+          data.critical++;
+        } else if (severity === "high") {
+          data.high++;
+        } else if (severity === "medium") {
+          data.medium++;
+        } else if (severity === "low" || severity === "negligible") {
+          data.low++;
+        }
+      }
+    });
+
+    return Array.from(monthlyCount.entries())
+      .map(([month, data]) => ({ month, ...data }))
+      .sort((a, b) => a.month.localeCompare(b.month))
+      .slice(-12);
+  }, [filteredVulnerabilities]);
 
   // Custom tooltip for timeline
   const CustomTimelineTooltip = ({ active, payload }: any) => {
