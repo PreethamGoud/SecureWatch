@@ -1,8 +1,9 @@
 /**
  * Dashboard Page - Overview with metrics and animated charts
+ * Implements lazy loading for dialogs to reduce initial bundle size
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import {
   Box,
   Typography,
@@ -25,9 +26,11 @@ import MetricsCards from "../components/MetricsCards";
 import ChartsGrid from "../components/ChartsGrid";
 import AnalysisButtons from "../components/AnalysisButtons";
 import UnifiedFilters from "../components/UnifiedFilters";
-import DataUploadDialog from "../components/DataUploadDialog";
 import LoadingScreen from "../components/LoadingScreen";
 import EmptyState from "../components/EmptyState";
+
+// Lazy load heavy dialog component (only loads when user clicks upload button)
+const DataUploadDialog = lazy(() => import("../components/DataUploadDialog"));
 
 interface DashboardProps {
   isDarkMode: boolean;
@@ -354,10 +357,12 @@ export default function Dashboard({ isDarkMode, toggleTheme }: DashboardProps) {
       </Box>
 
       {/* Upload Dialog */}
-      <DataUploadDialog
-        open={uploadDialogOpen}
-        onClose={() => setUploadDialogOpen(false)}
-      />
+      <Suspense fallback={null}>
+        <DataUploadDialog
+          open={uploadDialogOpen}
+          onClose={() => setUploadDialogOpen(false)}
+        />
+      </Suspense>
     </Layout>
   );
 }

@@ -210,8 +210,8 @@ export default function Layout({
                   localStorage.clear();
                   sessionStorage.clear();
 
-                  // Force immediate reload without waiting
-                  window.location.href = window.location.href;
+                  // Force immediate reload
+                  window.location.reload();
                 }
               }}
               sx={{

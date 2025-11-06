@@ -2,9 +2,10 @@
  * Creative Analysis Filter Buttons Component
  * Features engaging visual design with filter state indicators,
  * animated transitions, and impact visualization
+ * Optimized with React.memo to prevent unnecessary re-renders
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import {
   Box,
   Button,
@@ -26,7 +27,7 @@ import {
 import { useVulnerabilities } from "../context/VulnerabilityContext";
 import { calculateFilterImpact } from "../utils/filtering";
 
-export default function AnalysisButtons() {
+const AnalysisButtons = memo(function AnalysisButtons() {
   const theme = useTheme();
   const { filters, updateFilter, allVulnerabilities, filteredVulnerabilities } =
     useVulnerabilities();
@@ -307,4 +308,6 @@ export default function AnalysisButtons() {
       )}
     </Paper>
   );
-}
+});
+
+export default AnalysisButtons;

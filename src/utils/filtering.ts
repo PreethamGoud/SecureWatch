@@ -54,15 +54,19 @@ export function applyFilters(
     }
 
     // Analysis filters (key feature!)
-    if (filters.excludeInvalidNoRisk && vuln.kaiStatus === "invalid - norisk") {
-      return false;
+    // Handle both formats: "invalid - norisk" and "invalid-norisk"
+    if (filters.excludeInvalidNoRisk) {
+      const status = vuln.kaiStatus?.toLowerCase().replace(/\s+/g, "-");
+      if (status === "invalid-norisk") {
+        return false;
+      }
     }
 
-    if (
-      filters.excludeAiInvalidNoRisk &&
-      vuln.kaiStatus === "ai-invalid-norisk"
-    ) {
-      return false;
+    if (filters.excludeAiInvalidNoRisk) {
+      const status = vuln.kaiStatus?.toLowerCase().replace(/\s+/g, "-");
+      if (status === "ai-invalid-norisk") {
+        return false;
+      }
     }
 
     // CVSS range filter

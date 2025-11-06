@@ -3,11 +3,12 @@
  * TOP: Severity (donut) + AI vs Manual (stacked bar) | Top Risk Factors (tall)
  * MIDDLE: Published Timeline (line)
  * BOTTOM: Vulnerabilities Over Time (stacked area)
+ * Optimized with React.memo and useMemo for performance
  */
 
+import { useMemo, memo } from "react";
 import { Grid, Paper, Typography, useTheme, alpha, Stack } from "@mui/material";
 import { motion } from "framer-motion";
-import { useMemo } from "react";
 import {
   PieChart,
   Pie,
@@ -26,7 +27,7 @@ import AIvsManualChart from "./AIvsManualChart";
 import TopRiskFactorsChart from "./TopRiskFactorsChart";
 import VulnerabilitiesOverTimeChart from "./VulnerabilitiesOverTimeChart";
 
-export default function ChartsGrid() {
+const ChartsGrid = memo(function ChartsGrid() {
   const theme = useTheme();
   const { filteredVulnerabilities } = useVulnerabilities();
 
@@ -312,4 +313,6 @@ export default function ChartsGrid() {
       </Grid>
     </Grid>
   );
-}
+});
+
+export default ChartsGrid;

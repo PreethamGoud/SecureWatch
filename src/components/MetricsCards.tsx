@@ -2,9 +2,10 @@
  * Metrics Cards Component
  * Displays key performance indicators (KPIs) for vulnerabilities
  * Fully responsive with proper spacing and touch-friendly targets
+ * Optimized with React.memo to prevent unnecessary re-renders
  */
 
-import { useMemo } from "react";
+import { useMemo, memo } from "react";
 import {
   Grid,
   Card,
@@ -25,7 +26,7 @@ import { motion } from "framer-motion";
 import { useVulnerabilities } from "../context/VulnerabilityContext";
 import { getSeverityColor } from "../theme/theme";
 
-export default function MetricsCards() {
+const MetricsCards = memo(function MetricsCards() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { filteredVulnerabilities, allVulnerabilities } = useVulnerabilities();
@@ -212,4 +213,6 @@ export default function MetricsCards() {
       ))}
     </Grid>
   );
-}
+});
+
+export default MetricsCards;

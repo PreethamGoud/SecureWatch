@@ -1,8 +1,9 @@
 /**
  * Vulnerabilities Page - Full table view with filters, comparison, and export
+ * Implements lazy loading for heavy components to reduce initial bundle size
  */
 
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import {
   Box,
   Typography,
@@ -34,13 +35,17 @@ import Layout from "../components/Layout";
 import VulnerabilityTable from "../components/VulnerabilityTable";
 import AnalysisButtons from "../components/AnalysisButtons";
 import UnifiedFilters from "../components/UnifiedFilters";
-import ComparisonPanel from "../components/ComparisonPanel";
-import VulnerabilityDetailPanel from "../components/VulnerabilityDetailPanel";
-import ExportDialog from "../components/ExportDialog";
-import DataUploadDialog from "../components/DataUploadDialog";
 import LoadingScreen from "../components/LoadingScreen";
 import EmptyState from "../components/EmptyState";
 import type { FlattenedVulnerability } from "../types/vulnerability";
+
+// Lazy load heavy components that aren't needed on initial render
+const ComparisonPanel = lazy(() => import("../components/ComparisonPanel"));
+const VulnerabilityDetailPanel = lazy(
+  () => import("../components/VulnerabilityDetailPanel")
+);
+const ExportDialog = lazy(() => import("../components/ExportDialog"));
+const DataUploadDialog = lazy(() => import("../components/DataUploadDialog"));
 
 interface VulnerabilitiesPageProps {
   isDarkMode: boolean;
@@ -555,10 +560,14 @@ export default function VulnerabilitiesPage({
                   borderLeft: `3px solid ${theme.palette.primary.main}`,
                 }}
               >
-                <VulnerabilityDetailPanel
-                  vulnerability={selectedVulnerability}
-                  onClose={handleCloseDetail}
-                />
+                <Suspense
+                  fallback={<Box sx={{ p: 3 }}>Loading details...</Box>}
+                >
+                  <VulnerabilityDetailPanel
+                    vulnerability={selectedVulnerability}
+                    onClose={handleCloseDetail}
+                  />
+                </Suspense>
               </Paper>
             </motion.div>
           )}
@@ -622,7 +631,11 @@ export default function VulnerabilitiesPage({
                     overflow: "auto",
                   }}
                 >
-                  <ComparisonPanel />
+                  <Suspense
+                    fallback={<Box sx={{ p: 3 }}>Loading comparison...</Box>}
+                  >
+                    <ComparisonPanel />
+                  </Suspense>
                 </Box>
               </Paper>
             </motion.div>
@@ -630,16 +643,20 @@ export default function VulnerabilitiesPage({
         </AnimatePresence>
 
         {/* Export Dialog */}
-        <ExportDialog
-          open={exportDialogOpen}
-          onClose={() => setExportDialogOpen(false)}
-        />
+        <Suspense fallback={null}>
+          <ExportDialog
+            open={exportDialogOpen}
+            onClose={() => setExportDialogOpen(false)}
+          />
+        </Suspense>
 
         {/* Upload Dialog */}
-        <DataUploadDialog
-          open={uploadDialogOpen}
-          onClose={() => setUploadDialogOpen(false)}
-        />
+        <Suspense fallback={null}>
+          <DataUploadDialog
+            open={uploadDialogOpen}
+            onClose={() => setUploadDialogOpen(false)}
+          />
+        </Suspense>
       </Box>
     </Layout>
   );
