@@ -15,10 +15,7 @@ import {
   useTheme,
   useMediaQuery,
 } from "@mui/material";
-import {
-  FilterList as FilterIcon,
-  Close as CloseIcon,
-} from "@mui/icons-material";
+import { Tune as FilterIcon, Close as CloseIcon } from "@mui/icons-material";
 import { motion } from "framer-motion";
 import { useVulnerabilities } from "../context/VulnerabilityContext";
 import Layout from "../components/Layout";
@@ -175,18 +172,23 @@ export default function Dashboard({ isDarkMode, toggleTheme }: DashboardProps) {
                   <IconButton
                     onClick={() => setFilterDrawerOpen(!filterDrawerOpen)}
                     sx={{
-                      minWidth: 44,
-                      minHeight: 44,
                       bgcolor: filterDrawerOpen
                         ? alpha(theme.palette.primary.main, 0.15)
-                        : "transparent",
+                        : "background.paper",
                       color: filterDrawerOpen ? "primary.main" : "text.primary",
+                      border: 1,
+                      borderColor: filterDrawerOpen
+                        ? "primary.main"
+                        : "divider",
+                      minWidth: 44,
+                      minHeight: 44,
                       transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                       transform: filterDrawerOpen
                         ? "rotate(180deg)"
                         : "rotate(0deg)",
                       "&:hover": {
                         bgcolor: alpha(theme.palette.primary.main, 0.2),
+                        borderColor: "primary.main",
                         transform: filterDrawerOpen
                           ? "rotate(180deg) scale(1.1)"
                           : "scale(1.1)",
