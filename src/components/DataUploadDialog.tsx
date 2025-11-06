@@ -29,6 +29,7 @@ export default function DataUploadDialog({ open, onClose }: Props) {
   const [tabValue, setTabValue] = useState(0);
   const [url, setUrl] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>
@@ -36,14 +37,27 @@ export default function DataUploadDialog({ open, onClose }: Props) {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Validate file type
+    if (!file.name.toLowerCase().endsWith(".json")) {
+      setError("Please select a JSON file (.json extension required)");
+      return;
+    }
+
     setError("");
+    setIsLoading(true);
+
     try {
       const loader = getDataLoader();
       await loader.loadFromFile(file);
+      setIsLoading(false);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load file");
+      setIsLoading(false);
     }
+
+    // Reset input so same file can be selected again
+    event.target.value = "";
   };
 
   const handleUrlLoad = async () => {
@@ -53,17 +67,25 @@ export default function DataUploadDialog({ open, onClose }: Props) {
     }
 
     setError("");
+    setIsLoading(true);
     try {
       const loader = getDataLoader();
       await loader.loadFromURL(url);
+      setIsLoading(false);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load from URL");
+      setIsLoading(false);
     }
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog
+      open={open}
+      onClose={isLoading ? undefined : onClose}
+      maxWidth="sm"
+      fullWidth
+    >
       <DialogTitle>Load Vulnerability Data</DialogTitle>
       <DialogContent>
         <Tabs
@@ -87,12 +109,13 @@ export default function DataUploadDialog({ open, onClose }: Props) {
               <input
                 type="file"
                 hidden
-                accept=".json"
+                accept=".json,application/json"
                 onChange={handleFileUpload}
               />
             </Button>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-              Upload the ui_demo.json vulnerability data file
+              Upload any JSON vulnerability data file (any name, must end with
+              .json)
             </Typography>
           </Box>
         ) : (
@@ -118,9 +141,15 @@ export default function DataUploadDialog({ open, onClose }: Props) {
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose} disabled={isLoading}>
+          Cancel
+        </Button>
         {tabValue === 1 && (
-          <Button onClick={handleUrlLoad} variant="contained">
+          <Button
+            onClick={handleUrlLoad}
+            variant="contained"
+            disabled={isLoading}
+          >
             Load
           </Button>
         )}
