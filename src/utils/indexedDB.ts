@@ -203,17 +203,30 @@ export async function isDatabasePopulated(): Promise<boolean> {
  * Clear all data (for reimport)
  */
 export async function clearDatabase(): Promise<void> {
-  const db = await initDB();
-  const tx = db.transaction(
-    ["vulnerabilities", "metadata", "metrics"],
-    "readwrite"
-  );
-  await Promise.all([
-    tx.objectStore("vulnerabilities").clear(),
-    tx.objectStore("metadata").clear(),
-    tx.objectStore("metrics").clear(),
-    tx.done,
-  ]);
+  try {
+    // Check if database exists first
+    const exists = await isDatabasePopulated();
+    if (!exists) return;
+
+    // Close existing connection
+    if (dbInstance) {
+      dbInstance.close();
+      dbInstance = null;
+    }
+
+    // Delete the entire database (fastest way to clear large datasets)
+    await new Promise<void>((resolve, reject) => {
+      const deleteRequest = indexedDB.deleteDatabase(DB_NAME);
+      deleteRequest.onsuccess = () => resolve();
+      deleteRequest.onerror = () => reject(deleteRequest.error);
+    });
+
+    // Reinitialize the database (creates fresh empty database)
+    await initDB();
+  } catch (error) {
+    console.error("Failed to clear database:", error);
+    throw error;
+  }
 }
 
 /**

@@ -157,9 +157,24 @@ export class DataLoader {
    */
   public async loadFromURL(url: string): Promise<void> {
     try {
+      // Check if database has data first
+      const { clearDatabase, isDatabasePopulated } = await import(
+        "./indexedDB"
+      );
+      const hasData = await isDatabasePopulated();
+
+      if (hasData) {
+        this.updateState({
+          status: "loading",
+          progress: 0,
+          message: "Clearing database cache...",
+        });
+        await clearDatabase();
+      }
+
       this.updateState({
         status: "loading",
-        progress: 0,
+        progress: 5,
         message: "Fetching JSON file...",
       });
 
@@ -248,10 +263,31 @@ export class DataLoader {
    */
   public async loadFromFile(file: File): Promise<void> {
     try {
+      // Check if database has data first
+      const { clearDatabase, isDatabasePopulated } = await import(
+        "./indexedDB"
+      );
+      const hasData = await isDatabasePopulated();
+
+      if (hasData) {
+        this.updateState({
+          status: "loading",
+          progress: 0,
+          message: "Clearing database cache...",
+        });
+        await clearDatabase();
+
+        // Verify it's actually empty
+        const stillHasData = await isDatabasePopulated();
+        if (stillHasData) {
+          throw new Error("Failed to clear existing data");
+        }
+      }
+
       this.updateState({
         status: "loading",
-        progress: 0,
-        message: "Reading file...",
+        progress: 10,
+        message: `Reading file: ${file.name}`,
       });
 
       const text = await file.text();
@@ -259,7 +295,7 @@ export class DataLoader {
       this.updateState({
         status: "processing",
         progress: 50,
-        message: "Processing data...",
+        message: "Processing vulnerability data...",
       });
 
       if (this.worker) {
@@ -267,12 +303,14 @@ export class DataLoader {
           type: "PROCESS_JSON",
           payload: text,
         });
+      } else {
+        throw new Error("Worker not initialized");
       }
     } catch (error) {
       this.updateState({
         status: "error",
         progress: 0,
-        message: "Failed to read file",
+        message: "Failed to load file",
         error: error instanceof Error ? error.message : "Unknown error",
       });
       throw error;

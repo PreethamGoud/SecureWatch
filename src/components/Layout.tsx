@@ -25,7 +25,6 @@ import {
 } from "@mui/icons-material";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { clearDatabase } from "../utils/indexedDB";
 
 interface LayoutProps {
   children: ReactNode;
@@ -199,19 +198,31 @@ export default function Layout({
           {/* Clear Cache Button */}
           <Tooltip title="Clear Cache">
             <IconButton
-              onClick={() => {
-                if (
-                  window.confirm(
-                    "Are you sure you want to clear all cached data? This will reload the page immediately."
-                  )
-                ) {
-                  // Don't use async/await - execute synchronously then reload
-                  clearDatabase().catch(console.error);
-                  localStorage.clear();
-                  sessionStorage.clear();
+              onClick={async () => {
+                try {
+                  const { isDatabasePopulated, clearDatabase } = await import(
+                    "../utils/indexedDB"
+                  );
+                  const hasData = await isDatabasePopulated();
 
-                  // Force immediate reload
-                  window.location.reload();
+                  if (!hasData) {
+                    alert("No cached data found.");
+                    return;
+                  }
+
+                  if (
+                    window.confirm(
+                      "Clear all cached data? This will reload the page."
+                    )
+                  ) {
+                    await clearDatabase();
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    window.location.reload();
+                  }
+                } catch (error) {
+                  console.error("Failed to clear cache:", error);
+                  alert("Failed to clear cache.");
                 }
               }}
               sx={{
