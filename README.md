@@ -6,7 +6,7 @@ A high-performance, **frontend-only** React dashboard for analyzing security vul
 
 **[View Live Application →](https://your-app.vercel.app)**
 
-![Demo](assets/demo.gif)
+![Demo](assets/SecureWatchDemo.gif)
 
 ---
 
