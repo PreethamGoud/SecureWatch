@@ -4,7 +4,7 @@ A high-performance, frontend-only React dashboard for analyzing security vulnera
 
 ## Live Demo
 
-**[View Live Application](https://your-app.vercel.app)**
+**[View Live Application](https://secure-watch-blond.vercel.app/)**
 
 ![Demo](assets/SecureWatchDemo.gif)
 
